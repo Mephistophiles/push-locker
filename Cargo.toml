@@ -2,5 +2,6 @@
 
 members = [
 	"pushlock-server",
+	"pushlock-check",
 	"pushlockctl"
 ]
