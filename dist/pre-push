@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+SERVER_ADDR=""
+
+if [ -z "$SERVER_ADDR" ]; then
+	echo -en "\033[91mConfigure server address\033[0m"
+	exit 1
+fi
+
+if ! pushlock-check "$SERVER_ADDR"; then
+	echo -en "\033[91mThe merge window is currently is busy. Continue anyway? [y|n] \033[0m"
+	read -t 2 -n 1 -r reply < /dev/tty || reply='n'
+
+	if echo $reply| grep -E '^[Yy]$' > /dev/null
+	then
+		exit 0 # push will execute
+	fi
+	exit 1 # push will not execute
+fi
+
+exit 0 # push will execute
