@@ -50,6 +50,7 @@ fn app() -> App<'static> {
         .author(clap::crate_authors!())
         .about(clap::crate_description!())
         .version(clap::crate_version!())
+        .setting(AppSettings::InferSubcommands)
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .subcommand(
             App::new("generate")
