@@ -3,12 +3,19 @@ name = "pushlockctl"
 version = "0.1.0"
 authors = ["Maxim Zhukov <mussitantesmortem@gmail.com>"]
 edition = "2018"
+description = "Utility for managing push-windows."
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-reqwest = "0.11.2"
 clap = "3.0.0-beta.2"
 clap_generate = "3.0.0-beta.2"
+colored = "2"
+dirs = "3.0.1"
+hyper = { version = "0.14.4", features = ["client"] }
+indoc = "1.0.3"
+serde = { version = "1.0.124", features = ["derive"] }
+serde_json = { version = "1.0.64" }
 tokio = { version = "1.3.0", features = ["full"] }
-
+toml = "0.5.8"
+user-error = "1.2.8"
