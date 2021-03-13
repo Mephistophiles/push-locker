@@ -1,0 +1,34 @@
+pkgname=pushlock-git
+pkgver=0.1.0
+pkgrel=1
+epoch=1
+pkgdesc="A utility for merge window reservation."
+arch=('x86_64' 'i686')
+_commit="b98001864eb6c7aaeea55851315e1fb7937a9b6b"
+url="https://github.com/Mephistophiles/push-locker.git#commit=$_commit"
+license=('GPL3')
+depends=()
+makedepends=('cargo' 'git')
+optdepends=()
+provides=('pushlock')
+conflicts=()
+source=($pkgname::git+https://github.com/Mephistophiles/push-locker.git)
+sha256sums=('SKIP')
+
+pkgver() {
+	cd $pkgname
+	echo $(grep '^version =' pushlock-server/Cargo.toml|head -n1|cut -d\" -f2).$(git rev-list --count HEAD).g$(git describe --always)
+}
+
+build() {
+	cd $pkgname
+	cargo build --release --workspace
+}
+
+package() {
+	cd $pkgname
+	install -s -D -m755 "$srcdir/$pkgname/target/release/pushlock-server" "$pkgdir/usr/bin/pushlock-server"
+	install -s -D -m755 "$srcdir/$pkgname/target/release/pushlock-check" "$pkgdir/usr/bin/pushlock-check"
+	install -s -D -m755 "$srcdir/$pkgname/target/release/pushlockctl" "$pkgdir/usr/bin/pushlockctl"
+	install -s -D -m644 "$srcdir/$pkgname/dist/pre-push" "$pkgdir/usr/share/pushlock/pre-push"
+}
