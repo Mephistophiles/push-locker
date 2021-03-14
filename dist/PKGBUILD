@@ -4,7 +4,7 @@ pkgrel=1
 epoch=1
 pkgdesc="A utility for merge window reservation."
 arch=('x86_64' 'i686')
-_commit="aca6e8ceadfdce3f513a7ba10ae2c0a9178049f1"
+_commit="333f1444b0820990d4b3c94b18f8801e61222098"
 url="https://github.com/Mephistophiles/push-locker.git#commit=$_commit"
 license=('GPL3')
 depends=()

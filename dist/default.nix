@@ -7,11 +7,11 @@ rustPlatform.buildRustPackage rec {
   src = pkgs.fetchFromGitHub {
     owner = "Mephistophiles";
     repo = pname;
-    rev = "aca6e8ceadfdce3f513a7ba10ae2c0a9178049f1";
-    sha256 = "1d5aw0dmv7gkdcliq1mwz7n43kbdsyv3h6iv7zrrisn64f0269wh";
+    rev = "333f1444b0820990d4b3c94b18f8801e61222098";
+    sha256 = "0fbhymcxhz76lifryggrjh4hphq86gav4w5c0bxcrsvdrbkl33rl";
   };
 
-  cargoSha256 = "0avz1x4kyszzq7rhg8gn7nh6qldss5vjfr59263q8rfx03djh79s";
+  cargoSha256 = "0rck7qkp9pf3nr8kglf48dczamd2gn3bmgx4bggl7rfxpqhixbjc";
 
   nativeBuildInputs = [ pkg-config pkgs.python3 pkgs.protobuf pkgs.rustfmt ];
   buildInputs = [];
