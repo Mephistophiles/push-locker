@@ -1,11 +1,11 @@
 pkgname=pushlock-git
-pkgver=0.1.0
+pkgver=0.1.1
 pkgrel=1
 epoch=1
 pkgdesc="A utility for merge window reservation."
 arch=('x86_64' 'i686')
-_commit="333f1444b0820990d4b3c94b18f8801e61222098"
-url="https://github.com/Mephistophiles/push-locker.git#commit=$_commit"
+_tag="v0.1.1"
+url="https://github.com/Mephistophiles/push-locker.git#commit=$_tag"
 license=('GPL3')
 depends=()
 makedepends=('cargo' 'git')
@@ -17,7 +17,7 @@ sha256sums=('SKIP')
 
 pkgver() {
 	cd $pkgname
-	echo $(grep '^version =' pushlock-server/Cargo.toml|head -n1|cut -d\" -f2).$(git rev-list --count HEAD).g$(git describe --always)
+	echo $pkgver
 }
 
 build() {

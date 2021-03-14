@@ -2,18 +2,18 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "push-locker";
-  version = "0.1.0";
+  version = "0.1.1";
 
   src = pkgs.fetchFromGitHub {
     owner = "Mephistophiles";
     repo = pname;
-    rev = "333f1444b0820990d4b3c94b18f8801e61222098";
-    sha256 = "0fbhymcxhz76lifryggrjh4hphq86gav4w5c0bxcrsvdrbkl33rl";
+    rev = "v${version}";
+    sha256 = "0r3ajiff0hd8zhdapi8vw559bnys48dr5wj4vgc8y9p56di3ggcb";
   };
 
-  cargoSha256 = "0rck7qkp9pf3nr8kglf48dczamd2gn3bmgx4bggl7rfxpqhixbjc";
+  cargoSha256 = "0si8j5j9sxf4y332byi3rs7l0bxl9ix2pjxr5rwh1mxdrl53y18d";
 
-  nativeBuildInputs = [ pkg-config pkgs.python3 pkgs.protobuf pkgs.rustfmt ];
+  nativeBuildInputs = [ pkg-config ];
   buildInputs = [];
 
   postInstall = ''
