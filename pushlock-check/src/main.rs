@@ -4,7 +4,7 @@ use std::{env, process, str::FromStr};
 
 #[tokio::main]
 async fn main() {
-    let server = env::args().skip(1).next().expect("Server address");
+    let server = env::args().nth(1).expect("Server address");
     let endpoint = format!("http://{}/is_locked", server);
     let client = Client::new();
     let res = client.get(Uri::from_str(&endpoint).unwrap()).await.unwrap();
