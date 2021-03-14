@@ -1,67 +1,103 @@
-use actix_web::{get, http::StatusCode, post, web, App, HttpRequest, HttpResponse, HttpServer};
+use hyper::{
+    server::conn::AddrStream,
+    service::{make_service_fn, service_fn},
+    Body, Method, Request, Response, Server, StatusCode,
+};
 use state::Context;
-use std::{net::IpAddr, sync::Arc};
+use std::{convert::Infallible, net::IpAddr, net::SocketAddr, sync::Arc};
 use tokio::sync::Mutex;
 
 mod args;
 mod state;
 
-#[derive(Default, Clone)]
+type BoxError = Box<dyn std::error::Error + Send + Sync>;
+
+#[derive(Default)]
 struct Runtime {
-    state: Arc<Mutex<Context>>,
+    state: Mutex<Context>,
 }
 
-async fn check_lock<F>(req: HttpRequest, data: web::Data<Runtime>, f: F) -> HttpResponse
+async fn check_lock<F>(ip: IpAddr, data: Arc<Runtime>, f: F) -> Result<Response<Body>, BoxError>
 where
-    F: FnOnce(&mut Context, IpAddr),
+    F: FnOnce(&mut Context),
 {
     let mut state = data.state.lock().await;
-    let requested_ip = req.peer_addr().unwrap().ip();
 
-    if let Some(locked) = state.get_lock_status(&requested_ip) {
-        return HttpResponse::build(StatusCode::LOCKED).json(locked);
+    if let Some(locked) = state.get_lock_status(&ip) {
+        let bytes = serde_json::to_vec(&locked)?;
+        return Ok(Response::builder()
+            .status(StatusCode::LOCKED)
+            .body(Body::from(bytes))?);
     }
 
-    f(&mut state, requested_ip);
+    f(&mut state);
 
-    HttpResponse::Ok().finish()
+    Ok(Response::builder()
+        .status(StatusCode::OK)
+        .body(Body::empty())?)
 }
 
-#[post("/lock")]
-async fn lock(req: HttpRequest, data: web::Data<Runtime>) -> HttpResponse {
-    check_lock(req, data, |state, ip| {
+// #[post("/lock")]
+async fn lock(ip: IpAddr, data: Arc<Runtime>) -> Result<Response<Body>, BoxError> {
+    check_lock(ip, data, |state| {
         state.locks.insert(ip);
     })
     .await
 }
 
-#[post("/release")]
-async fn unlock(req: HttpRequest, data: web::Data<Runtime>) -> HttpResponse {
-    check_lock(req, data, |state, ip| {
+// #[post("/release")]
+async fn unlock(ip: IpAddr, data: Arc<Runtime>) -> Result<Response<Body>, BoxError> {
+    check_lock(ip, data, |state| {
         state.locks.remove(&ip);
-    }).await
+    })
+    .await
 }
 
-#[get("/is_locked")]
-async fn get_state(req: HttpRequest, data: web::Data<Runtime>) -> HttpResponse {
-    check_lock(req, data, |_state, _ip| ()).await
+// #[get("/is_locked")]
+async fn get_state(ip: IpAddr, data: Arc<Runtime>) -> Result<Response<Body>, BoxError> {
+    check_lock(ip, data, |_state| ()).await
 }
 
-#[actix_web::main]
+async fn handle_request(
+    ip: IpAddr,
+    req: Request<Body>,
+    runtime: Arc<Runtime>,
+) -> Result<Response<Body>, BoxError> {
+    match (req.method(), req.uri().path()) {
+        (&Method::POST, "/lock") => lock(ip, runtime).await,
+        (&Method::POST, "/release") => unlock(ip, runtime).await,
+        (&Method::GET, "/is_locked") => get_state(ip, runtime).await,
+        _ => Ok(Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body(Body::empty())?),
+    }
+}
+
+#[tokio::main]
 async fn main() -> std::io::Result<()> {
     let port: u16 = args::get_port();
-    let runtime = Runtime::default();
+    let runtime = Arc::new(Runtime::default());
 
-    HttpServer::new(move || {
-        let runtime = web::Data::new(runtime.clone());
+    let bind_addr = SocketAddr::from(([0, 0, 0, 0], port));
 
-        App::new()
-            .app_data(runtime)
-            .service(lock)
-            .service(unlock)
-            .service(get_state)
-    })
-    .bind(format!("0.0.0.0:{}", port))?
-    .run()
-    .await
+    let make_service = make_service_fn(move |client: &AddrStream| {
+        let ip = client.remote_addr().ip();
+        let runtime = runtime.clone();
+        async move {
+            // This is the request handler.
+            Ok::<_, Infallible>(service_fn(move |req| {
+                let runtime = runtime.clone();
+                handle_request(ip, req, runtime)
+            }))
+        }
+    });
+
+    let server = Server::bind(&bind_addr).serve(make_service);
+
+    println!("Starting server on http://{}/", bind_addr);
+    if let Err(e) = server.await {
+        eprintln!("server error: {}", e);
+    }
+
+    Ok(())
 }
