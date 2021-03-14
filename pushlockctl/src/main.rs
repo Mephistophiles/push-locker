@@ -20,7 +20,7 @@ fn print_unknown_error() {
 }
 
 fn print_available() {
-    println!("{}", "Push available".green());
+    println!("{}", "Push is available".green());
 }
 
 async fn print_locked(res: Response<Body>) {

@@ -37,7 +37,6 @@ where
         .body(Body::empty())?)
 }
 
-// #[post("/lock")]
 async fn lock(ip: IpAddr, data: Arc<Runtime>) -> Result<Response<Body>, BoxError> {
     check_lock(ip, data, |state| {
         state.locks.insert(ip);
@@ -45,7 +44,6 @@ async fn lock(ip: IpAddr, data: Arc<Runtime>) -> Result<Response<Body>, BoxError
     .await
 }
 
-// #[post("/release")]
 async fn unlock(ip: IpAddr, data: Arc<Runtime>) -> Result<Response<Body>, BoxError> {
     check_lock(ip, data, |state| {
         state.locks.remove(&ip);
@@ -53,7 +51,6 @@ async fn unlock(ip: IpAddr, data: Arc<Runtime>) -> Result<Response<Body>, BoxErr
     .await
 }
 
-// #[get("/is_locked")]
 async fn get_state(ip: IpAddr, data: Arc<Runtime>) -> Result<Response<Body>, BoxError> {
     check_lock(ip, data, |_state| ()).await
 }
