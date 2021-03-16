@@ -8,7 +8,9 @@ For these purposes, a handy git pre-push hook is needed to notify that the merge
 # Installation
 
 ```
-cargo install --git https://github.com/Mephistophiles/push-locker
+git clone https://github.com/Mephistophiles/push-locker
+cd push-locker
+cargo build --release # cargo install is not working for workspaces
 mkdir -p $HOME/.config/pushlock/
 echo "server = <server_ip:server_port>" >  $HOME/.config/pushlock/config.toml
 ```
