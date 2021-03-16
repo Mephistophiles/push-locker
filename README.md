@@ -24,7 +24,7 @@ echo "server = <server_ip:server_port>" >  $HOME/.config/pushlock/config.toml
 
 * Run `pushlock-server` on a dedicated server available to every team member.
 * Configure `pushlockctl` for each team member.
-* Copy pre-push hook from the repo and replace server address in the file.
-* Run 'pushlockctl lock' to reserve the merge window.
-* Run 'pushlockctl unlock' to release the currently locked merge window.
-* Run 'pushlockctl check' to check if the merge is available.
+* Copy `pre-push` hook from the repo and replace server address in the file.
+* Run `pushlockctl lock` to reserve the merge window.
+* Run `pushlockctl unlock` to release the currently locked merge window.
+* Run `pushlockctl check` to check if the merge is available.
