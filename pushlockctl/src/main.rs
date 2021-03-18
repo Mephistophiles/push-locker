@@ -1,42 +1,71 @@
 use args::{Action, Config};
-use colored::*;
-use hyper::{Body, Client, Method, Request, Response, StatusCode};
-use serde::{Deserialize, Serialize};
+use pushlock_lib::{Locked, UserInfo};
+use reqwest::{Client, Method, Response, StatusCode};
+use std::io::Write;
 use std::process;
+use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 mod args;
 
-#[derive(Deserialize)]
-struct Locked {
-    push_available: bool,
-    locked_by: Option<String>,
+fn red() -> StandardStream {
+    let mut stdout = StandardStream::stdout(ColorChoice::Auto);
+    stdout
+        .set_color(ColorSpec::new().set_fg(Some(Color::Red)))
+        .unwrap();
+
+    stdout
 }
 
-#[derive(Serialize)]
-struct UserInfo {
-    username: String,
+fn green() -> StandardStream {
+    let mut stdout = StandardStream::stdout(ColorChoice::Auto);
+    stdout
+        .set_color(ColorSpec::new().set_fg(Some(Color::Green)))
+        .unwrap();
+
+    stdout
+}
+
+fn yellow() -> StandardStream {
+    let mut stdout = StandardStream::stdout(ColorChoice::Auto);
+    stdout
+        .set_color(ColorSpec::new().set_fg(Some(Color::Yellow)))
+        .unwrap();
+
+    stdout
 }
 
 fn print_ok() {
-    println!("{}", "OK".green());
+    let mut stdout = green();
+
+    writeln!(&mut stdout, "OK").unwrap();
 }
 
-fn print_unknown_error() {
-    println!("{}", "Unknown error".red());
+fn print_unknown_error(res: Response) {
+    let mut stdout = red();
+
+    writeln!(&mut stdout, "Unknown error").unwrap();
+    writeln!(&mut stdout, "{:?}", res).unwrap();
 }
 
-async fn print_locked(res: Response<Body>) {
-    let buf = hyper::body::to_bytes(res).await.expect("body");
-    let result: Locked = serde_json::from_slice(&buf).expect("json");
+async fn print_locked(res: Response) {
+    let result: Locked = res.json().await.unwrap();
 
     if !result.push_available {
-        println!("{} {}", "Locked by:".red(), result.locked_by.unwrap());
+        let mut stdout = red();
+        writeln!(
+            &mut stdout,
+            "Locked by: {}",
+            result.locked_by.expect("username")
+        )
+        .unwrap();
         process::exit(1);
     } else if let Some(_locked_by) = result.locked_by {
-        println!("{}", "Locked by me".yellow());
+        let mut stdout = yellow();
+        writeln!(&mut stdout, "Locked by me").unwrap();
         process::exit(2);
     } else {
-        println!("{}", "Push is available".green());
+        let mut stdout = green();
+        writeln!(&mut stdout, "Push is available").unwrap();
         process::exit(0);
     }
 }
@@ -52,29 +81,24 @@ async fn main() {
     };
 
     let user_info = UserInfo {
-        username: args.username.clone(),
+        username: whoami::username(),
     };
-    let bytes = serde_json::to_vec(&user_info).unwrap();
 
-    let req = Request::builder()
-        .uri(&args.endpoint)
-        .method(method)
-        .body(Body::from(bytes))
-        .unwrap();
-    let res = client.request(req).await.unwrap();
+    let req = client.request(method, &args.endpoint).json(&user_info);
+    let res = req.send().await.unwrap();
 
     match args.action {
         Action::Lock | Action::Release => match res.status() {
             StatusCode::OK => print_ok(),
             StatusCode::LOCKED => print_locked(res).await,
-            _ => print_unknown_error(),
+            _ => print_unknown_error(res),
         },
         Action::CheckState => match res.status() {
             StatusCode::OK | StatusCode::LOCKED => {
                 print_locked(res).await;
             }
             _ => {
-                print_unknown_error();
+                print_unknown_error(res);
                 process::exit(255)
             }
         },

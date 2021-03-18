@@ -1,14 +1,14 @@
 use serde::Serialize;
 
 #[derive(Serialize)]
-pub(crate) struct Locked {
+pub struct Locked {
     pub(crate) push_available: bool,
     pub(crate) locked_by: Option<String>,
 }
 
 #[derive(Default, Clone)]
-pub(crate) struct Context {
-    pub(crate) locked_by: Option<String>,
+pub struct Context {
+    pub locked_by: Option<String>,
 }
 
 impl Context {
@@ -23,5 +23,41 @@ impl Context {
             push_available,
             locked_by: self.locked_by.clone(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn unlocked() {
+        let ctx = Context::default();
+        let locked = ctx.get_lock_status("john");
+
+        assert_eq!(locked.push_available, true);
+        assert_eq!(locked.locked_by, None);
+    }
+
+    #[test]
+    fn locked_by_me() {
+        let mut ctx = Context::default();
+        ctx.locked_by = Some("john".to_string());
+
+        let locked = ctx.get_lock_status("john");
+
+        assert_eq!(locked.push_available, true);
+        assert_eq!(locked.locked_by.as_deref(), Some("john"));
+    }
+
+    #[test]
+    fn locked_by_other() {
+        let mut ctx = Context::default();
+        ctx.locked_by = Some("a".to_string());
+
+        let locked = ctx.get_lock_status("john");
+
+        assert_eq!(locked.push_available, false);
+        assert_eq!(locked.locked_by.as_deref(), Some("a"));
     }
 }

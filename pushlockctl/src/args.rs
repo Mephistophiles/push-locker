@@ -26,7 +26,6 @@ impl Default for Action {
 #[derive(Deserialize)]
 pub(crate) struct Config {
     pub(crate) server: String,
-    pub(crate) username: String,
     #[serde(skip)]
     pub(crate) action: Action,
     #[serde(skip)]

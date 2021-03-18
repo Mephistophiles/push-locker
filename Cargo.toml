@@ -1,6 +1,7 @@
 [workspace]
 
 members = [
+	"pushlock-lib",
 	"pushlock-server",
-	"pushlockctl"
+	"pushlockctl",
 ]

@@ -1,124 +1,85 @@
-use hyper::{
-    server::conn::AddrStream,
-    service::{make_service_fn, service_fn},
-    Body, Method, Request, Response, Server, StatusCode,
-};
-use serde::Deserialize;
+use actix_web::{get, http::StatusCode, post, web, App, HttpResponse, HttpServer, Responder};
+use pushlock_lib::UserInfo;
 use state::Context;
-use std::{convert::Infallible, net::SocketAddr, sync::Arc};
+use std::{net::SocketAddr, sync::Arc};
 use tokio::sync::Mutex;
 
 mod args;
 mod state;
 
-type BoxError = Box<dyn std::error::Error + Send + Sync>;
-
-#[derive(Default)]
 struct Runtime {
     state: Mutex<Context>,
 }
 
-#[derive(Deserialize)]
-struct UserInfo {
-    username: String,
-}
-
-async fn lock(username: String, data: Arc<Runtime>) -> Result<Response<Body>, BoxError> {
+async fn check_lock<F>(
+    user_info: web::Json<UserInfo>,
+    data: web::Data<Arc<Runtime>>,
+    f: F,
+) -> impl Responder
+where
+    F: FnOnce(&mut Context, String),
+{
     let mut state = data.state.lock().await;
+    let user_info = user_info.into_inner();
+    let lock_state = state.get_lock_status(&user_info.username);
 
-    let lock_state = state.get_lock_status(&username);
+    let lock_status = if lock_state.push_available {
+        StatusCode::OK
+    } else {
+        StatusCode::LOCKED
+    };
 
-    if !lock_state.push_available {
-        let bytes = serde_json::to_vec(&lock_state)?;
-        return Ok(Response::builder()
-            .status(StatusCode::LOCKED)
-            .body(Body::from(bytes))?);
+    if lock_state.push_available {
+        f(&mut state, user_info.username);
     }
 
-    state.locked_by = Some(username);
-
-    Ok(Response::builder()
-        .status(StatusCode::OK)
-        .body(Body::empty())?)
+    HttpResponse::build(lock_status).json(lock_state)
 }
 
-async fn unlock(username: String, data: Arc<Runtime>) -> Result<Response<Body>, BoxError> {
-    let mut state = data.state.lock().await;
-
-    let lock_state = state.get_lock_status(&username);
-
-    if !lock_state.push_available {
-        let bytes = serde_json::to_vec(&lock_state)?;
-        return Ok(Response::builder()
-            .status(StatusCode::LOCKED)
-            .body(Body::from(bytes))?);
-    }
-
-    state.locked_by.take();
-
-    Ok(Response::builder()
-        .status(StatusCode::OK)
-        .body(Body::empty())?)
+#[post("/lock")]
+async fn lock(user_info: web::Json<UserInfo>, data: web::Data<Arc<Runtime>>) -> impl Responder {
+    check_lock(user_info, data, |state, username| {
+        state.locked_by = Some(username);
+    })
+    .await
 }
 
-async fn get_state(username: String, data: Arc<Runtime>) -> Result<Response<Body>, BoxError> {
-    let state = data.state.lock().await;
-    let locked = state.get_lock_status(&username);
-    let bytes = serde_json::to_vec(&locked)?;
-
-    if !locked.push_available {
-        let bytes = serde_json::to_vec(&locked)?;
-        return Ok(Response::builder()
-            .status(StatusCode::LOCKED)
-            .body(Body::from(bytes))?);
-    }
-
-    Ok(Response::builder()
-        .status(StatusCode::OK)
-        .body(Body::from(bytes))?)
+#[post("/release")]
+async fn unlock(user_info: web::Json<UserInfo>, data: web::Data<Arc<Runtime>>) -> impl Responder {
+    check_lock(user_info, data, |state, _username| {
+        state.locked_by.take();
+    })
+    .await
 }
 
-async fn handle_request(
-    mut req: Request<Body>,
-    runtime: Arc<Runtime>,
-) -> Result<Response<Body>, BoxError> {
-    let body = req.body_mut();
-    let bytes = hyper::body::to_bytes(body).await?;
-    let user_info: UserInfo = serde_json::from_slice(&bytes)?;
-    match (req.method(), req.uri().path()) {
-        (&Method::POST, "/lock") => lock(user_info.username, runtime).await,
-        (&Method::POST, "/release") => unlock(user_info.username, runtime).await,
-        (&Method::GET, "/lock_state") => get_state(user_info.username, runtime).await,
-        _ => Ok(Response::builder()
-            .status(StatusCode::NOT_FOUND)
-            .body(Body::empty())?),
-    }
+#[get("/lock_state")]
+async fn get_state(
+    user_info: web::Json<UserInfo>,
+    data: web::Data<Arc<Runtime>>,
+) -> impl Responder {
+    check_lock(user_info, data, |_state, _username| ()).await
 }
 
-#[tokio::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    flexi_logger::Logger::with_env_or_str("actix_web=trace")
+        .start()
+        .unwrap();
     let port: u16 = args::get_port();
-    let runtime = Arc::new(Runtime::default());
+    let runtime = Arc::new(Runtime {
+        state: Default::default(),
+    });
 
     let bind_addr = SocketAddr::from(([0, 0, 0, 0], port));
 
-    let make_service = make_service_fn(move |_client: &AddrStream| {
-        let runtime = runtime.clone();
-        async move {
-            // This is the request handler.
-            Ok::<_, Infallible>(service_fn(move |req| {
-                let runtime = runtime.clone();
-                handle_request(req, runtime)
-            }))
-        }
-    });
-
-    let server = Server::bind(&bind_addr).serve(make_service);
-
-    println!("Starting server on http://{}/", bind_addr);
-    if let Err(e) = server.await {
-        eprintln!("server error: {}", e);
-    }
-
-    Ok(())
+    HttpServer::new(move || {
+        App::new()
+            .data(runtime.clone())
+            .service(lock)
+            .service(unlock)
+            .service(get_state)
+    })
+    .bind(bind_addr)?
+    .run()
+    .await
 }
