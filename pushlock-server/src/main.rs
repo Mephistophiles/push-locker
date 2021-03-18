@@ -3,8 +3,9 @@ use hyper::{
     service::{make_service_fn, service_fn},
     Body, Method, Request, Response, Server, StatusCode,
 };
+use serde::Deserialize;
 use state::Context;
-use std::{convert::Infallible, net::IpAddr, net::SocketAddr, sync::Arc};
+use std::{convert::Infallible, net::SocketAddr, sync::Arc};
 use tokio::sync::Mutex;
 
 mod args;
@@ -17,53 +18,77 @@ struct Runtime {
     state: Mutex<Context>,
 }
 
-async fn check_lock<F>(ip: IpAddr, data: Arc<Runtime>, f: F) -> Result<Response<Body>, BoxError>
-where
-    F: FnOnce(&mut Context),
-{
+#[derive(Deserialize)]
+struct UserInfo {
+    username: String,
+}
+
+async fn lock(username: String, data: Arc<Runtime>) -> Result<Response<Body>, BoxError> {
     let mut state = data.state.lock().await;
 
-    if let Some(locked) = state.get_lock_status(&ip) {
-        let bytes = serde_json::to_vec(&locked)?;
+    let lock_state = state.get_lock_status(&username);
+
+    if !lock_state.push_available {
+        let bytes = serde_json::to_vec(&lock_state)?;
         return Ok(Response::builder()
             .status(StatusCode::LOCKED)
             .body(Body::from(bytes))?);
     }
 
-    f(&mut state);
+    state.locked_by = Some(username);
 
     Ok(Response::builder()
         .status(StatusCode::OK)
         .body(Body::empty())?)
 }
 
-async fn lock(ip: IpAddr, data: Arc<Runtime>) -> Result<Response<Body>, BoxError> {
-    check_lock(ip, data, |state| {
-        state.locks.insert(ip);
-    })
-    .await
+async fn unlock(username: String, data: Arc<Runtime>) -> Result<Response<Body>, BoxError> {
+    let mut state = data.state.lock().await;
+
+    let lock_state = state.get_lock_status(&username);
+
+    if !lock_state.push_available {
+        let bytes = serde_json::to_vec(&lock_state)?;
+        return Ok(Response::builder()
+            .status(StatusCode::LOCKED)
+            .body(Body::from(bytes))?);
+    }
+
+    state.locked_by.take();
+
+    Ok(Response::builder()
+        .status(StatusCode::OK)
+        .body(Body::empty())?)
 }
 
-async fn unlock(ip: IpAddr, data: Arc<Runtime>) -> Result<Response<Body>, BoxError> {
-    check_lock(ip, data, |state| {
-        state.locks.remove(&ip);
-    })
-    .await
-}
+async fn get_state(username: String, data: Arc<Runtime>) -> Result<Response<Body>, BoxError> {
+    let state = data.state.lock().await;
+    let locked = state.get_lock_status(&username);
+    let bytes = serde_json::to_vec(&locked)?;
 
-async fn get_state(ip: IpAddr, data: Arc<Runtime>) -> Result<Response<Body>, BoxError> {
-    check_lock(ip, data, |_state| ()).await
+    if !locked.push_available {
+        let bytes = serde_json::to_vec(&locked)?;
+        return Ok(Response::builder()
+            .status(StatusCode::LOCKED)
+            .body(Body::from(bytes))?);
+    }
+
+    Ok(Response::builder()
+        .status(StatusCode::OK)
+        .body(Body::from(bytes))?)
 }
 
 async fn handle_request(
-    ip: IpAddr,
-    req: Request<Body>,
+    mut req: Request<Body>,
     runtime: Arc<Runtime>,
 ) -> Result<Response<Body>, BoxError> {
+    let body = req.body_mut();
+    let bytes = hyper::body::to_bytes(body).await?;
+    let user_info: UserInfo = serde_json::from_slice(&bytes)?;
     match (req.method(), req.uri().path()) {
-        (&Method::POST, "/lock") => lock(ip, runtime).await,
-        (&Method::POST, "/release") => unlock(ip, runtime).await,
-        (&Method::GET, "/is_locked") => get_state(ip, runtime).await,
+        (&Method::POST, "/lock") => lock(user_info.username, runtime).await,
+        (&Method::POST, "/release") => unlock(user_info.username, runtime).await,
+        (&Method::GET, "/lock_state") => get_state(user_info.username, runtime).await,
         _ => Ok(Response::builder()
             .status(StatusCode::NOT_FOUND)
             .body(Body::empty())?),
@@ -77,14 +102,13 @@ async fn main() -> std::io::Result<()> {
 
     let bind_addr = SocketAddr::from(([0, 0, 0, 0], port));
 
-    let make_service = make_service_fn(move |client: &AddrStream| {
-        let ip = client.remote_addr().ip();
+    let make_service = make_service_fn(move |_client: &AddrStream| {
         let runtime = runtime.clone();
         async move {
             // This is the request handler.
             Ok::<_, Infallible>(service_fn(move |req| {
                 let runtime = runtime.clone();
-                handle_request(ip, req, runtime)
+                handle_request(req, runtime)
             }))
         }
     });

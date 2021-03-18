@@ -1,21 +1,25 @@
 #!/usr/bin/env bash
 
-SERVER_ADDR=""
+RES=$(pushlockctl check)
 
-if [ -z "$SERVER_ADDR" ]; then
-	echo -en "\033[91mConfigure server address\033[0m"
-	exit 1
-fi
+case $? in
+	0)
+		exit 0
+		;;
+	1)
+		echo "$RES"
+		echo -en "\033[91mThe merge window is currently is busy. Continue anyway? [y|n] \033[0m"
+		read -t 5 -n 1 -r reply < /dev/tty || reply='n'
 
-if ! pushlock-check "$SERVER_ADDR"; then
-	echo -en "\033[91mThe merge window is currently is busy. Continue anyway? [y|n] \033[0m"
-	read -t 2 -n 1 -r reply < /dev/tty || reply='n'
-
-	if echo $reply| grep -E '^[Yy]$' > /dev/null
-	then
-		exit 0 # push will execute
-	fi
-	exit 1 # push will not execute
-fi
+		if echo $reply| grep -E '^[Yy]$' > /dev/null
+		then
+			exit 0 # push will execute
+		fi
+		exit 1 # push will not execute
+		;;
+	2)
+		exit 0
+		;;
+esac
 
 exit 0 # push will execute

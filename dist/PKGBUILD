@@ -28,7 +28,6 @@ build() {
 package() {
 	cd $pkgname
 	install -s -D -m755 "$srcdir/$pkgname/target/release/pushlock-server" "$pkgdir/usr/bin/pushlock-server"
-	install -s -D -m755 "$srcdir/$pkgname/target/release/pushlock-check" "$pkgdir/usr/bin/pushlock-check"
 	install -s -D -m755 "$srcdir/$pkgname/target/release/pushlockctl" "$pkgdir/usr/bin/pushlockctl"
 	install -D -m755 "$srcdir/$pkgname/dist/pre-push" "$pkgdir/usr/share/pushlock/pre-push"
 }

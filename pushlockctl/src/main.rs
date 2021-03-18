@@ -1,14 +1,20 @@
 use args::{Action, Config};
 use colored::*;
 use hyper::{Body, Client, Method, Request, Response, StatusCode};
-use serde::Deserialize;
-use std::{net::IpAddr, process};
+use serde::{Deserialize, Serialize};
+use std::process;
 
 mod args;
 
 #[derive(Deserialize)]
 struct Locked {
-    locked_by: Vec<IpAddr>,
+    push_available: bool,
+    locked_by: Option<String>,
+}
+
+#[derive(Serialize)]
+struct UserInfo {
+    username: String,
 }
 
 fn print_ok() {
@@ -19,18 +25,19 @@ fn print_unknown_error() {
     println!("{}", "Unknown error".red());
 }
 
-fn print_available() {
-    println!("{}", "Push is available".green());
-}
-
 async fn print_locked(res: Response<Body>) {
     let buf = hyper::body::to_bytes(res).await.expect("body");
     let result: Locked = serde_json::from_slice(&buf).expect("json");
 
-    println!("{}", "Locked".yellow());
-
-    for ip in result.locked_by {
-        println!("* {}", ip);
+    if !result.push_available {
+        println!("{} {}", "Locked by:".red(), result.locked_by.unwrap());
+        process::exit(1);
+    } else if let Some(_locked_by) = result.locked_by {
+        println!("{}", "Locked by me".yellow());
+        process::exit(2);
+    } else {
+        println!("{}", "Push is available".green());
+        process::exit(0);
     }
 }
 
@@ -44,10 +51,15 @@ async fn main() {
         Action::CheckState => Method::GET,
     };
 
+    let user_info = UserInfo {
+        username: args.username.clone(),
+    };
+    let bytes = serde_json::to_vec(&user_info).unwrap();
+
     let req = Request::builder()
         .uri(&args.endpoint)
         .method(method)
-        .body(Body::empty())
+        .body(Body::from(bytes))
         .unwrap();
     let res = client.request(req).await.unwrap();
 
@@ -58,17 +70,12 @@ async fn main() {
             _ => print_unknown_error(),
         },
         Action::CheckState => match res.status() {
-            StatusCode::OK => {
-                print_available();
-                process::exit(0);
-            }
-            StatusCode::LOCKED => {
+            StatusCode::OK | StatusCode::LOCKED => {
                 print_locked(res).await;
-                process::exit(1);
             }
             _ => {
                 print_unknown_error();
-                process::exit(2)
+                process::exit(255)
             }
         },
     }

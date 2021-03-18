@@ -26,6 +26,7 @@ impl Default for Action {
 #[derive(Deserialize)]
 pub(crate) struct Config {
     pub(crate) server: String,
+    pub(crate) username: String,
     #[serde(skip)]
     pub(crate) action: Action,
     #[serde(skip)]
@@ -88,7 +89,8 @@ impl Config {
                     indoc! {"
                     Please create file {} with content:
 
-                    server = <pushlock server>
+                    server = \"<pushlock server ip>:<pushlock server port>\"
+                    username = \"<uniq username>\"
                     "},
                     home_dir.display()
                 ))
@@ -126,7 +128,7 @@ impl Config {
         self.endpoint = match self.action {
             Action::Lock => format!("http://{}/lock", self.server),
             Action::Release => format!("http://{}/release", self.server),
-            Action::CheckState => format!("http://{}/is_locked", self.server),
+            Action::CheckState => format!("http://{}/lock_state", self.server),
         };
     }
 }
