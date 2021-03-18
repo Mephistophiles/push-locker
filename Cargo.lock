@@ -1075,14 +1075,14 @@ dependencies = [
 
 [[package]]
 name = "pushlock-lib"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "pushlock-server"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "actix-web",
  "clap",
@@ -1095,7 +1095,7 @@ dependencies = [
 
 [[package]]
 name = "pushlockctl"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "clap",
  "clap_generate",
