@@ -81,7 +81,7 @@ async fn main() {
     };
 
     let user_info = UserInfo {
-        username: whoami::username(),
+        username: args.username,
     };
 
     let req = client.request(method, &args.endpoint).json(&user_info);

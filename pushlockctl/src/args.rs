@@ -23,8 +23,15 @@ impl Default for Action {
     }
 }
 
+fn default_username() -> String {
+    whoami::username()
+}
+
 #[derive(Deserialize)]
 pub(crate) struct Config {
+    #[serde(default = "default_username")]
+    pub(crate) username: String,
+
     pub(crate) server: String,
     #[serde(skip)]
     pub(crate) action: Action,
@@ -60,6 +67,12 @@ fn app() -> App<'static> {
         .subcommand(App::new("lock").about("Try to reserve a push window"))
         .subcommand(App::new("unlock").about("Release push window"))
         .subcommand(App::new("check").about("Check for current push window"))
+        .arg(
+            Arg::new("username")
+                .long("username")
+                .takes_value(true)
+                .about("Specify username"),
+        )
         .arg(
             Arg::new("server")
                 .long("server")
@@ -122,6 +135,10 @@ impl Config {
 
         if let Some(server) = args.value_of("server") {
             self.server = server.to_string();
+        }
+
+        if let Some(username) = args.value_of("username") {
+            self.username = username.to_string();
         }
 
         self.endpoint = match self.action {
