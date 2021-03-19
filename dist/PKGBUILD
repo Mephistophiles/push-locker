@@ -1,10 +1,10 @@
 pkgname=pushlock-git
-pkgver=0.1.1
+pkgver=0.1.3
 pkgrel=1
 epoch=1
 pkgdesc="A utility for merge window reservation."
 arch=('x86_64' 'i686')
-_tag="v0.1.1"
+_tag="v0.1.3"
 url="https://github.com/Mephistophiles/push-locker.git#commit=$_tag"
 license=('GPL3')
 depends=()
