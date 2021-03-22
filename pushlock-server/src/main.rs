@@ -11,45 +11,26 @@ struct Runtime {
     state: Mutex<Context>,
 }
 
-async fn check_lock<F>(
-    user_info: web::Json<UserInfo>,
-    data: web::Data<Arc<Runtime>>,
-    f: F,
-) -> impl Responder
-where
-    F: FnOnce(&mut Context, String),
-{
-    let mut state = data.state.lock().await;
-    let user_info = user_info.into_inner();
-    let lock_state = state.get_lock_status(&user_info.username);
-
-    let lock_status = if lock_state.push_available {
-        StatusCode::OK
-    } else {
-        StatusCode::LOCKED
-    };
-
-    if lock_state.push_available {
-        f(&mut state, user_info.username);
-    }
-
-    HttpResponse::build(lock_status).json(lock_state)
-}
-
 #[post("/lock")]
 async fn lock(user_info: web::Json<UserInfo>, data: web::Data<Arc<Runtime>>) -> impl Responder {
-    check_lock(user_info, data, |state, username| {
-        state.locked_by = Some(username);
-    })
-    .await
+    let mut state = data.state.lock().await;
+    let user_info = user_info.into_inner();
+
+    match state.lock(user_info.username) {
+        Ok(_) => HttpResponse::new(StatusCode::OK),
+        Err(lock_state) => HttpResponse::build(StatusCode::LOCKED).json(lock_state),
+    }
 }
 
 #[post("/release")]
 async fn unlock(user_info: web::Json<UserInfo>, data: web::Data<Arc<Runtime>>) -> impl Responder {
-    check_lock(user_info, data, |state, _username| {
-        state.locked_by.take();
-    })
-    .await
+    let mut state = data.state.lock().await;
+    let user_info = user_info.into_inner();
+
+    match state.unlock(user_info.username) {
+        Ok(_) => HttpResponse::new(StatusCode::OK),
+        Err(lock_state) => HttpResponse::build(StatusCode::LOCKED).json(lock_state),
+    }
 }
 
 #[get("/lock_state")]
@@ -57,7 +38,15 @@ async fn get_state(
     user_info: web::Json<UserInfo>,
     data: web::Data<Arc<Runtime>>,
 ) -> impl Responder {
-    check_lock(user_info, data, |_state, _username| ()).await
+    let state = data.state.lock().await;
+    let user_info = user_info.into_inner();
+    let lock_state = state.get_lock_status(&user_info.username);
+    let lock_status = match lock_state.push_available {
+        true => StatusCode::OK,
+        false => StatusCode::LOCKED,
+    };
+
+    HttpResponse::build(lock_status).json(lock_state)
 }
 
 #[actix_web::main]

@@ -1,9 +1,9 @@
 use serde::Serialize;
 
 #[derive(Serialize)]
-pub struct Locked {
-    pub(crate) push_available: bool,
-    pub(crate) locked_by: Option<String>,
+pub struct LockError {
+    pub push_available: bool,
+    pub locked_by: Option<String>,
 }
 
 #[derive(Default, Clone)]
@@ -12,14 +12,45 @@ pub struct Context {
 }
 
 impl Context {
-    pub(crate) fn get_lock_status(&self, my_username: &str) -> Locked {
+    fn check_locked_by(&self, user: &str) -> Result<(), LockError> {
+        if self.locked_by.is_none() {
+            return Ok(());
+        }
+
+        if self.locked_by.as_deref() != Some(user) {
+            return Err(LockError {
+                push_available: false,
+                locked_by: self.locked_by.clone(),
+            });
+        }
+
+        Ok(())
+    }
+}
+
+impl Context {
+    pub fn lock(&mut self, user: String) -> Result<(), LockError> {
+        self.check_locked_by(&user)?;
+        self.locked_by = Some(user);
+
+        Ok(())
+    }
+
+    pub fn unlock(&mut self, user: String) -> Result<(), LockError> {
+        self.check_locked_by(&user)?;
+        self.locked_by.take();
+
+        Ok(())
+    }
+
+    pub fn get_lock_status(&self, my_username: &str) -> LockError {
         // push is available if:
         //  - locks is empty
         //  - this is just my lock
         let push_available =
             self.locked_by.is_none() || self.locked_by.as_deref() == Some(my_username);
 
-        Locked {
+        LockError {
             push_available,
             locked_by: self.locked_by.clone(),
         }
