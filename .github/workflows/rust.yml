@@ -1,0 +1,81 @@
+name: Rust
+
+on:
+  pull_request:
+  push:
+    branches:
+    - master
+    - staging
+    - trying
+
+env:
+  CARGO_TERM_COLOR: always
+  CI: 1
+
+jobs:
+  #  rust-audit:
+  #    name: Audit Rust vulnerabilities
+  #    runs-on: ubuntu-latest
+  #    steps:
+  #    - name: Checkout repository
+  #      uses: actions/checkout@v2
+  #      with:
+  #        fetch-depth: 0
+  #    - name: rust-audit-check
+  #      uses: actions-rs/audit-check@v1.2.0
+  #      with:
+  #        token: ${{ secrets.GITHUB_TOKEN }}
+
+  rust:
+    name: Rust
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+
+    steps:
+    - name: Install libxcb-shape0-dev
+      run: sudo apt-get install libxcb-shape0-dev
+    - name: Install libxcb-xfixes0-dev
+      run: sudo apt-get install libxcb-xfixes0-dev
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+        components: rustfmt, rust-src
+
+    - name: Compile
+      run: cargo test --no-run --locked
+
+    - name: Test
+      run: cargo test
+
+  linters:
+    name: "Linters"
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - uses: actions-rs/toolchain@v1
+      with:
+          toolchain: nightly
+          components: clippy, rustfmt
+          override: true
+    - name: Check format
+      run: cargo fmt --all -- --check
+    - uses: actions-rs/clippy-check@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        args: --all-features
