@@ -2,16 +2,16 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "push-locker";
-  version = "0.1.3";
+  version = "0.1.4";
 
   src = pkgs.fetchFromGitHub {
     owner = "Mephistophiles";
     repo = pname;
     rev = "v${version}";
-    sha256 = "09bdjmm2rv0bivgl98f36625b8sa4sjmi4ll066vvlqw7wz9s701";
+    sha256 = "047938js7qi1h9n2rxbzd27kvgs7ynqwdrfmip8jnqvfawxi951j";
   };
 
-  cargoSha256 = "0hdsvgjmdfqb0cwn3flv9qwirx88k0cqz1fh2nvwmx5zvj83fnz7";
+  cargoSha256 = "047f97mhvj258851rplqg5lz1dhhsx7wmqmgxvds2y20qmhlvhpa";
 
   nativeBuildInputs = [ pkg-config ];
   buildInputs = [];
