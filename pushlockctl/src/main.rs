@@ -37,16 +37,13 @@ async fn main() {
     let args = Config::from_config();
     let client = Client::new();
 
-    let method = match args.action {
-        Action::Lock | Action::Release => Method::POST,
-        Action::CheckState => Method::GET,
-    };
-
     let user_info = UserInfo {
         username: args.username,
     };
 
-    let req = client.request(method, &args.endpoint).json(&user_info);
+    let req = client
+        .request(Method::POST, &args.endpoint)
+        .json(&user_info);
     let res = req.send().await.unwrap();
 
     match args.action {

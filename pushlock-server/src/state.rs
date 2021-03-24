@@ -1,3 +1,4 @@
+use crossbeam_channel::{Receiver, Sender};
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -6,9 +7,24 @@ pub struct LockError {
     pub locked_by: Option<String>,
 }
 
-#[derive(Default, Clone)]
+#[derive(Clone)]
 pub struct Context {
+    pub rx_channel: Receiver<Option<String>>,
+    pub tx_channel: Sender<Option<String>>,
     pub locked_by: Option<String>,
+}
+
+impl Default for Context {
+    fn default() -> Self {
+        let (tx_channel, rx_channel) = crossbeam_channel::unbounded();
+        let locked_by = None;
+
+        Self {
+            rx_channel,
+            tx_channel,
+            locked_by,
+        }
+    }
 }
 
 impl Context {
@@ -32,6 +48,7 @@ impl Context {
     pub fn lock(&mut self, user: String) -> Result<(), LockError> {
         self.check_locked_by(&user)?;
         self.locked_by = Some(user);
+        self.tx_channel.send(self.locked_by.clone()).unwrap();
 
         Ok(())
     }
@@ -39,6 +56,7 @@ impl Context {
     pub fn unlock(&mut self, user: String) -> Result<(), LockError> {
         self.check_locked_by(&user)?;
         self.locked_by.take();
+        self.tx_channel.send(self.locked_by.clone()).unwrap();
 
         Ok(())
     }
