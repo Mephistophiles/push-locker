@@ -1027,7 +1027,7 @@ dependencies = [
 
 [[package]]
 name = "pushlock-server"
-version = "0.1.5-alpha.0"
+version = "0.1.5"
 dependencies = [
  "actix-web",
  "clap",
