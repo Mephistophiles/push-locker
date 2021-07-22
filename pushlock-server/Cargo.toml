@@ -11,6 +11,6 @@ actix-web = { version = "4.0.0-beta.7" }
 clap = "3.0.0-beta.2"
 serde = { version = "1.0.126", features = ["derive"] }
 serde_json = { version = "1.0.64" }
-tokio = { version = "1.7.1", features = ["rt-multi-thread", "sync"] }
+tokio = { version = "1.9.0", features = ["rt-multi-thread", "sync"] }
 pushlock-lib = { path = "../pushlock-lib" }
 flexi_logger = "0.18.0"
