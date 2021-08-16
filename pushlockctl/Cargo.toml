@@ -8,16 +8,16 @@ description = "Utility for managing push-windows."
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = "3.0.0-beta.2"
-clap_generate = "3.0.0-beta.2"
+clap = "3.0.0-beta.4"
+clap_generate = "3.0.0-beta.4"
 dirs = "3.0.2"
 indoc = "1.0.3"
 pushlock-lib = { path = "../pushlock-lib" }
 reqwest = { version = "0.11.4", default-features = false, features = ["json"] }
-serde = { version = "1.0.126", features = ["derive"] }
-serde_json = { version = "1.0.64" }
+serde = { version = "1.0.127", features = ["derive"] }
+serde_json = { version = "1.0.66" }
 termcolor = "1.1.2"
-tokio = { version = "1.7.1", features = ["full"] }
+tokio = { version = "1.10.0", features = ["full"] }
 toml = "0.5.8"
 user-error = "1.2.8"
 whoami = "1.1.2"

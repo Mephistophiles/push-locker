@@ -1,4 +1,6 @@
-use actix_web::{get, http::StatusCode, post, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{
+    get, http::StatusCode, post, web, web::Data, App, HttpResponse, HttpServer, Responder,
+};
 use pushlock_lib::UserInfo;
 use state::Context;
 use std::{net::SocketAddr, sync::Arc};
@@ -62,7 +64,8 @@ async fn get_state(
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    flexi_logger::Logger::with_env_or_str("actix_web=trace")
+    flexi_logger::Logger::try_with_env_or_str("actix_web=trace")
+        .unwrap()
         .start()
         .unwrap();
     let port: u16 = args::get_port();
@@ -74,7 +77,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
-            .data(runtime.clone())
+            .app_data(Data::new(runtime.clone()))
             .service(lock)
             .service(unlock)
             .service(get_state)
