@@ -43,11 +43,11 @@ fn autocomplete(shell: &str) {
     let mut app = app();
 
     match shell {
-        "bash" => generate::<Bash, _>(&mut app, clap::crate_name!(), &mut io::stdout()),
-        "elvish" => generate::<Elvish, _>(&mut app, clap::crate_name!(), &mut io::stdout()),
-        "fish" => generate::<Fish, _>(&mut app, clap::crate_name!(), &mut io::stdout()),
-        "powershell" => generate::<PowerShell, _>(&mut app, clap::crate_name!(), &mut io::stdout()),
-        "zsh" => generate::<Zsh, _>(&mut app, clap::crate_name!(), &mut io::stdout()),
+        "bash" => generate(Bash, &mut app, clap::crate_name!(), &mut io::stdout()),
+        "elvish" => generate(Elvish, &mut app, clap::crate_name!(), &mut io::stdout()),
+        "fish" => generate(Fish, &mut app, clap::crate_name!(), &mut io::stdout()),
+        "powershell" => generate(PowerShell, &mut app, clap::crate_name!(), &mut io::stdout()),
+        "zsh" => generate(Zsh, &mut app, clap::crate_name!(), &mut io::stdout()),
         _ => panic!("Unknown generator"),
     }
 }
