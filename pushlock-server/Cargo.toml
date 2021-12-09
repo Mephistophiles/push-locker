@@ -9,7 +9,7 @@ edition = "2018"
 [dependencies]
 actix-web = { version = "4.0.0-beta.8" }
 clap = "3.0.0-beta.4"
-serde = { version = "1.0.127", features = ["derive"] }
+serde = { version = "1.0.131", features = ["derive"] }
 serde_json = { version = "1.0.66" }
 tokio = { version = "1.10.0", features = ["rt-multi-thread", "sync"] }
 pushlock-lib = { path = "../pushlock-lib" }
