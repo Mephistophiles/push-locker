@@ -9,7 +9,7 @@ description = "Utility for managing push-windows."
 
 [dependencies]
 clap = "3.0.0-beta.4"
-clap_generate = "3.0.0-beta.4"
+clap_generate = "3.0.0-rc.1"
 dirs = "4"
 indoc = "1.0.3"
 pushlock-lib = { path = "../pushlock-lib" }
