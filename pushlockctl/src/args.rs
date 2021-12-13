@@ -55,29 +55,28 @@ fn autocomplete(shell: &str) {
 fn app() -> App<'static> {
     App::new("pushlock")
         .author(clap::crate_authors!())
-        .about(clap::crate_description!())
         .version(clap::crate_version!())
         .setting(AppSettings::InferSubcommands)
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .subcommand(
             App::new("generate")
-                .about("generate autocomplete for shell")
+                .override_help("generate autocomplete for shell")
                 .arg(Arg::new("shell").takes_value(true).required(true)),
         )
-        .subcommand(App::new("lock").about("Try to reserve a push window"))
-        .subcommand(App::new("unlock").about("Release push window"))
-        .subcommand(App::new("check").about("Check for current push window"))
+        .subcommand(App::new("lock").override_help("Try to reserve a push window"))
+        .subcommand(App::new("unlock").override_help("Release push window"))
+        .subcommand(App::new("check").override_help("Check for current push window"))
         .arg(
             Arg::new("username")
                 .long("username")
                 .takes_value(true)
-                .about("Specify username"),
+                .help("Specify username"),
         )
         .arg(
             Arg::new("server")
                 .long("server")
                 .takes_value(true)
-                .about("Specify server address"),
+                .help("Specify server address"),
         )
 }
 

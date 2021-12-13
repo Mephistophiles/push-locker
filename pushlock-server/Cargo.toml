@@ -7,10 +7,10 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-actix-web = { version = "4.0.0-beta.8" }
-clap = "3.0.0-beta.4"
-serde = { version = "1.0.127", features = ["derive"] }
-serde_json = { version = "1.0.66" }
-tokio = { version = "1.10.0", features = ["rt-multi-thread", "sync"] }
+actix-web = { version = "4.0.0-beta.14" }
+clap = "3.0.0-rc.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0" }
+tokio = { version = "1.14", features = ["rt-multi-thread", "sync"] }
 pushlock-lib = { path = "../pushlock-lib" }
-flexi_logger = "0.20"
+flexi_logger = "0.21"
