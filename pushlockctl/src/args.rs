@@ -1,7 +1,7 @@
 use clap::{App, AppSettings, Arg, ArgMatches};
-use clap_generate::{
+use clap_complete::{
     generate,
-    generators::{Bash, Elvish, Fish, PowerShell, Zsh},
+    shells::{Bash, Elvish, Fish, PowerShell, Zsh},
 };
 use indoc::indoc;
 use serde::Deserialize;
