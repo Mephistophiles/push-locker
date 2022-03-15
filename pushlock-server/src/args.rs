@@ -1,7 +1,7 @@
-use clap::{App, Arg};
+use clap::{Arg, Command};
 
 pub(crate) fn get_port() -> u16 {
-    let app = App::new("pushlock-server")
+    let app = Command::new("pushlock-server")
         .arg(
             Arg::new("port")
                 .takes_value(true)

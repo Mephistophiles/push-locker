@@ -1,5 +1,5 @@
 [workspace]
-
+resolver = "2"
 members = [
 	"pushlock-lib",
 	"pushlock-server",

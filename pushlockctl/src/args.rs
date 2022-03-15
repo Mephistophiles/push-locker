@@ -1,4 +1,4 @@
-use clap::{App, AppSettings, Arg, ArgMatches};
+use clap::{Arg, ArgMatches, Command};
 use clap_complete::{
     generate,
     shells::{Bash, Elvish, Fish, PowerShell, Zsh},
@@ -52,20 +52,20 @@ fn autocomplete(shell: &str) {
     }
 }
 
-fn app() -> App<'static> {
-    App::new("pushlock")
+fn app() -> Command<'static> {
+    Command::new("pushlock")
         .author(clap::crate_authors!())
         .version(clap::crate_version!())
-        .setting(AppSettings::InferSubcommands)
-        .setting(AppSettings::SubcommandRequiredElseHelp)
+        .infer_subcommands(true)
+        .arg_required_else_help(true)
         .subcommand(
-            App::new("generate")
+            Command::new("generate")
                 .override_help("generate autocomplete for shell")
                 .arg(Arg::new("shell").takes_value(true).required(true)),
         )
-        .subcommand(App::new("lock").override_help("Try to reserve a push window"))
-        .subcommand(App::new("unlock").override_help("Release push window"))
-        .subcommand(App::new("check").override_help("Check for current push window"))
+        .subcommand(Command::new("lock").override_help("Try to reserve a push window"))
+        .subcommand(Command::new("unlock").override_help("Release push window"))
+        .subcommand(Command::new("check").override_help("Check for current push window"))
         .arg(
             Arg::new("username")
                 .long("username")
