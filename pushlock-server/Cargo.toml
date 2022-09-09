@@ -13,4 +13,4 @@ serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1" }
 tokio = { version = "1", features = ["rt-multi-thread", "sync"] }
 pushlock-lib = { path = "../pushlock-lib" }
-flexi_logger = "0.22"
+flexi_logger = "0.23"
