@@ -8,7 +8,7 @@ description = "Utility for managing push-windows."
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "3", features = ["cargo"] }
+clap = { version = "4", features = ["cargo"] }
 clap_complete = "3"
 dirs = "4"
 indoc = "1"
