@@ -334,7 +334,7 @@ checksum = "85a35a599b11c089a7f49105658d089b8f2cf0882993c17daf6de15285c2c35d"
 dependencies = [
  "atty",
  "bitflags",
- "clap_lex",
+ "clap_lex 0.2.0",
  "indexmap",
  "lazy_static",
  "strsim",
@@ -343,12 +343,22 @@ dependencies = [
 ]
 
 [[package]]
-name = "clap_complete"
-version = "3.1.3"
+name = "clap"
+version = "4.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d7ca9141e27e6ebc52e3c378b0c07f3cea52db46ed1cc5861735fb697b56356"
+checksum = "0e638668a62aced2c9fb72b5135a33b4a500485ccf2a0e402e09aa04ab2fc115"
 dependencies = [
- "clap",
+ "bitflags",
+ "clap_lex 0.3.1",
+]
+
+[[package]]
+name = "clap_complete"
+version = "4.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3d6540eedc41f8a5a76cf3d8d458057dcdf817be4158a55b5f861f7a5483de75"
+dependencies = [
+ "clap 4.1.2",
 ]
 
 [[package]]
@@ -356,6 +366,15 @@ name = "clap_lex"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a37c35f1112dad5e6e0b1adaff798507497a18fceeb30cceb3bae7d1427b9213"
+dependencies = [
+ "os_str_bytes",
+]
+
+[[package]]
+name = "clap_lex"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "783fe232adfca04f90f56201b26d79682d4cd2625e0bc7290b95123afe558ade"
 dependencies = [
  "os_str_bytes",
 ]
@@ -945,7 +964,7 @@ name = "pushlock-server"
 version = "0.1.6-alpha.0"
 dependencies = [
  "actix-web",
- "clap",
+ "clap 3.1.15",
  "flexi_logger",
  "pushlock-lib",
  "serde",
@@ -957,7 +976,7 @@ dependencies = [
 name = "pushlockctl"
 version = "0.1.6-alpha.0"
 dependencies = [
- "clap",
+ "clap 3.1.15",
  "clap_complete",
  "dirs",
  "indoc",
